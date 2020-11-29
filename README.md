@@ -4,5 +4,5 @@ A series of Medium posts highlighting the significance of Approximate Nearest Ne
 
 1. KNN is Dead
     - Medium Post:
-    - Run in Colab:
+    - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/stephenleo/adventures-with-ann/blob/main/knn_is_dead.ipynb)
     - Jupyter Notebook: [Link](knn_is_dead.ipynb)
