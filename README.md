@@ -8,6 +8,6 @@ A series of Medium posts highlighting the significance of Approximate Nearest Ne
     - Jupyter Notebook: [Link](knn_is_dead.ipynb)
     
 2. How to Choose the Best Nearest Neighbors Algorithm?
-    - Medium Post: 
+    - Medium Post: [Link](https://medium.com/towards-artificial-intelligence/how-to-choose-the-best-nearest-neighbors-algorithm-8d75d42b16ab?sk=889bc0006f5ff773e3a30fa283d91ee7)
     - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/stephenleo/adventures-with-ann/blob/main/ann_benchmarking.ipynb)
     - Jupyter Notebook: [Link](ann_benchmarking.ipynb)
