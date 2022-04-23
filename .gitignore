@@ -1,2 +1,6 @@
 .ipynb_checkpoints/
 *.xcf
+*.bin
+*.pkl
+*.pdf
+*.npy
