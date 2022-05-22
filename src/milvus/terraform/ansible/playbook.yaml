@@ -1,0 +1,472 @@
+- name: All Servers
+  hosts: etcd_ips_public:pulsar_ips_public:minio_ips_public:data_ips_public:index_ips_public:query_ips_public:proxy_ips_public:root_coordinator_ips_public:data_coordinator_ips_public:query_coordinator_ips_public:index_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+  tags:
+    - start
+  tasks:
+  - name: Install docker
+    ansible.builtin.yum:
+      name: docker
+      state: present
+  - name: Run docker
+    ansible.builtin.service:
+      name: docker
+      state: started
+
+  - name: Install or upgrade docker-compose
+    get_url: 
+      url : "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+      dest: /usr/local/bin/docker-compose
+      mode: 'a+x'
+      force: yes
+  - name: Create symbolic link for docker-compose
+    file:
+      src: "/usr/local/bin/docker-compose"
+      dest: "/usr/bin/docker-compose"
+      state: link
+
+
+- name: etcd
+  hosts: etcd_ips_public
+  remote_user: ec2-user
+  become: true
+  tags:
+    - start
+
+  tasks:
+  - name: Copy etcd config
+    ansible.builtin.template:
+      src: ./yaml_files/etcd.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run etcd node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: pulsar
+  hosts: pulsar_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+  tags:
+    - start
+  tasks:
+  - name: Copy pulsar config
+    ansible.builtin.template:
+      src: ./yaml_files/pulsar.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run pulsar node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: minio
+  hosts: minio_ips_public
+  remote_user: ec2-user
+  become: true
+  tags:
+    - start
+
+  tasks:
+  - name: Copy minio config
+    ansible.builtin.template:
+      src: ./yaml_files/minio.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run minio node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: root_coordinator
+  hosts: root_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    rootcoord_index: "groups['root_coordinator_ips_public'].index(inventory_hostname)"
+    rootcoord_ip: "{{groups['root_coordinator_ips_private'][rootcoord_index | int]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy root_coordinator config
+    ansible.builtin.template:
+      src: ./yaml_files/rootcoord.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run root_coordinator node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: data_coordinator
+  hosts: data_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    datacoord_index: "{{groups['data_coordinator_ips_public'].index(inventory_hostname)}}"
+    datacoord_ip: "{{groups['data_coordinator_ips_private'][datacoord_index | int]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy data_coordinator config
+    ansible.builtin.template:
+      src: ./yaml_files/datacoord.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run data_coordinator node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: query_coordinator
+  hosts: query_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    querycoord_index: "groups['query_coordinator_ips_public'].index(inventory_hostname)"
+    querycoord_ip: "{{groups['query_coordinator_ips_private'][querycoord_index | int]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy query_coordinator config
+    ansible.builtin.template:
+      src: ./yaml_files/querycoord.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run query_coordinator node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: index_coordinator
+  hosts: index_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    indexcoord_index: "groups['index_coordinator_ips_public'].index(inventory_hostname)"
+    indexcoord_ip: "{{groups['index_coordinator_ips_private'][indexcoord_index | int]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy index_coordinator config
+    ansible.builtin.template:
+      src: ./yaml_files/indexcoord.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run index_coordinator node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+
+- name: query
+  hosts: query_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy query config
+    ansible.builtin.template:
+      src: ./yaml_files/querynode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run query node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: index
+  hosts: index_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    indexcoord_ip: "{{groups['index_coordinator_ips_private'][0]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy index config
+    ansible.builtin.template:
+      src: ./yaml_files/indexnode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run index node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: data
+  hosts: data_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    datacoord_ip: "{{groups['data_coordinator_ips_private'][0]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy data config
+    ansible.builtin.template:
+      src: ./yaml_files/datanode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run data node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: proxy
+  hosts: proxy_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+  tags:
+    - start
+
+  tasks:
+  - name: Copy proxy config
+    ansible.builtin.template:
+      src: ./yaml_files/proxynode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run proxy node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: Scale Index
+  hosts: index_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    indexcoord_ip: "{{groups['index_coordinator_ips_private'][0]}}"
+  tags:
+    - scale_index
+
+  tasks:
+  - name: Install docker
+    ansible.builtin.yum:
+      name: docker
+      state: present
+  - name: Run docker
+    ansible.builtin.service:
+      name: docker
+      state: started
+
+  - name: Install or upgrade docker-compose
+    get_url: 
+      url : "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+      dest: /usr/local/bin/docker-compose
+      mode: 'a+x'
+      force: yes
+  - name: Create symbolic link for docker-compose
+    file:
+      src: "/usr/local/bin/docker-compose"
+      dest: "/usr/bin/docker-compose"
+      state: link
+
+  - name: Copy index config
+    ansible.builtin.template:
+      src: ./yaml_files/indexnode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run index node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: Scale data
+  hosts: data_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+    datacoord_ip: "{{groups['data_coordinator_ips_private'][0]}}"
+  tags:
+    - scale_data
+
+  tasks:
+  - name: Install docker
+    ansible.builtin.yum:
+      name: docker
+      state: present
+  - name: Run docker
+    ansible.builtin.service:
+      name: docker
+      state: started
+
+  - name: Install or upgrade docker-compose
+    get_url: 
+      url : "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+      dest: /usr/local/bin/docker-compose
+      mode: 'a+x'
+      force: yes
+  - name: Create symbolic link for docker-compose
+    file:
+      src: "/usr/local/bin/docker-compose"
+      dest: "/usr/bin/docker-compose"
+      state: link
+
+  - name: Copy data config
+    ansible.builtin.template:
+      src: ./yaml_files/datanode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run data node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+
+- name: Scale proxy
+  hosts: proxy_ips_public
+  remote_user: ec2-user
+  become: true
+  vars:
+    etcd_ip: "{{groups['etcd_ips_private'][0]}}"
+    minio_ip: "{{groups['minio_ips_private'][0]}}"
+    pulsar_ip: "{{groups['pulsar_ips_private'][0]}}"
+  tags:
+    - scale_proxy
+
+  tasks:
+  - name: Install docker
+    ansible.builtin.yum:
+      name: docker
+      state: present
+
+  - name: Run docker
+    ansible.builtin.service:
+      name: docker
+      state: started
+
+  - name: Install or upgrade docker-compose
+    get_url: 
+      url : "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64"
+      dest: /usr/local/bin/docker-compose
+      mode: 'a+x'
+      force: yes
+
+  - name: Create symbolic link for docker-compose
+    file:
+      src: "/usr/local/bin/docker-compose"
+      dest: "/usr/bin/docker-compose"
+      state: link
+
+  - name: Copy proxy config
+    ansible.builtin.template:
+      src: ./yaml_files/proxynode.j2
+      dest: /home/ec2-user/docker-compose.yml
+      owner: ec2-user
+      group: wheel
+      mode: '0644'
+
+  - name: Run proxy node
+    shell: docker-compose up -d
+    args:
+      chdir: /home/ec2-user/
+
+- name: All Servers Restart
+  hosts: data_ips_public:index_ips_public:query_ips_public:proxy_ips_public #:root_coordinator_ips_public:data_coordinator_ips_public:query_coordinator_ips_public:index_coordinator_ips_public
+  remote_user: ec2-user
+  become: true
+
+  tags:
+    - restart
+
+  tasks:
+    - name: docker down
+      shell: docker-compose down
+      args:
+        chdir: /home/ec2-user/
+
+    - name: docker up
+      shell: docker-compose up -d
+      args:
+        chdir: /home/ec2-user/
+

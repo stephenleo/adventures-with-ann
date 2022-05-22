@@ -1,0 +1,11 @@
+version: '3.5'
+
+services:
+
+  pulsar:
+    container_name: milvus-pulsar
+    image: apachepulsar/pulsar:latest
+    command: bin/pulsar standalone
+    ports:
+      - "6650:6650"
+

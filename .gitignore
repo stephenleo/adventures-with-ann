@@ -1,6 +1,9 @@
+.DS_Store
 .ipynb_checkpoints/
 *.xcf
 *.bin
 *.pkl
 *.pdf
 *.npy
+*.tfstate
+terraform*

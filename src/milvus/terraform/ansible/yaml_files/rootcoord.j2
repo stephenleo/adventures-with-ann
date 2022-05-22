@@ -1,0 +1,14 @@
+version: '3.5'
+
+services:
+
+  rootcoord:
+    container_name: milvus-rootcoord
+    image: milvusdb/milvus:v2.0.0-rc1-20210628-b87baa1
+    command: ["milvus", "run", "rootcoord"]
+    environment:
+      ETCD_ENDPOINTS: {{ etcd_ip }}:2379
+      MINIO_ADDRESS: {{ minio_ip }}:9000
+      PULSAR_ADDRESS: pulsar://{{ pulsar_ip }}:6650
+      ROOT_COORD_ADDRESS: {{ rootcoord_ip }}:53100
+    network_mode: "host"

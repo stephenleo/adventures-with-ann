@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+
+  querynode:
+    container_name: milvus-querynode
+    image: milvusdb/milvus:v2.0.0-rc1-20210628-b87baa1
+    command: ["milvus", "run", "querynode"]
+    environment:
+      ETCD_ENDPOINTS: {{etcd_ip}}:2379
+      MINIO_ADDRESS: {{minio_ip}}:9000
+      PULSAR_ADDRESS: pulsar://{{pulsar_ip}}:6650
+    network_mode: "host"

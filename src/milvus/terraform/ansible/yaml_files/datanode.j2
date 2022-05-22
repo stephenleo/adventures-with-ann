@@ -1,0 +1,16 @@
+version: '3.5'
+
+services:
+
+  datanode:
+    container_name: milvus-datanode
+    image: milvusdb/milvus:v2.0.0-rc1-20210628-b87baa1
+    command: ["milvus", "run", "datanode"]
+    environment:
+      ETCD_ENDPOINTS: {{etcd_ip}}:2379
+      MINIO_ADDRESS: {{minio_ip}}:9000
+      PULSAR_ADDRESS: pulsar://{{pulsar_ip}}:6650
+      DATA_COORD_ADDRESS: {{datacoord_ip}}:13333
+    network_mode: "host"
+
+ 
